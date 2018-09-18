@@ -51,6 +51,9 @@ cnotminPass = optimizationPass minCNOT
 simplifyPass :: DotQCPass
 simplifyPass = Right . simplifyDotQC
 
+badPass :: DotQCPass
+badPass = optimizationPass (\_ _ gates -> drop 1 gates)
+
 equivalenceCheck :: DotQC -> DotQC -> Either String DotQC
 equivalenceCheck qc qc' =
   let gatelist      = toCliffordT . toGatelist $ qc
@@ -121,6 +124,7 @@ parseArgs pass verify (x:xs) = case x of
   "-cnotmin"   -> parseArgs (pass >=> cnotminPass) verify xs
   "-tpar"      -> parseArgs (pass >=> tparPass) verify xs
   "-simplify"  -> parseArgs (pass >=> simplifyPass) verify xs
+  "-bad"       -> parseArgs (pass >=> badPass) verify xs
   "-verify"    -> parseArgs pass True xs
   "VerBench"   -> runBenchmarks cnotminPass (Just equivalenceCheck) benchmarksMedium
   "VerAlg"     -> runVerSuite
