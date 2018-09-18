@@ -127,6 +127,7 @@ parseArgs pass verify (x:xs) = case x of
   "Small"      -> runBenchmarks pass (if verify then Just equivalenceCheck else Nothing) benchmarksSmall
   "Med"        -> runBenchmarks pass (if verify then Just equivalenceCheck else Nothing) benchmarksMedium
   "All"        -> runBenchmarks pass (if verify then Just equivalenceCheck else Nothing) benchmarksAll
+  "HS"         -> simulateHiddenShift (read $ head xs) (read . head $ tail xs) ()
   f | (drop (length f - 3) f) == ".qc" -> readFile f >>= run pass verify f
   f | otherwise -> putStrLn ("Unrecognized option \"" ++ f ++ "\"") >> printHelp
 

@@ -184,7 +184,7 @@ runBenchmarks pass verify xs =
               gateRed   <- mapM printStat (Map.toList $ counts)
               depthRed  <- printStat ("Depth", depths)
               tdepthRed <- printStat ("Tdepth", tdepths)
-              writeFile (benchmarksPath ++ "opt/" ++ s ++ "_opt.qc") (show c')
+              --writeFile (benchmarksPath ++ "opt/" ++ s ++ "_opt.qc") (show c')
               return . Just $ Map.unionsWith (+) (gateRed ++ [depthRed, tdepthRed])
   in do
     results <- liftM catMaybes $ mapM runBench xs
