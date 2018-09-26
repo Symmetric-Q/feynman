@@ -323,7 +323,7 @@ parseContinuous = floating2 True >>= return . Continuous
 
 parseAngle = do
   char '('
-  theta <- sign <*> (parseDiscrete <|> parseContinuous)
+  theta <- sign <*> ((try parseDiscrete) <|> parseContinuous)
   char ')'
   return theta
 

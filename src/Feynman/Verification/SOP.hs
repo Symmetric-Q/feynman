@@ -54,9 +54,7 @@ instance (Show a, Eq a, Num a) => Show (SOP a) where
                  True  -> ""
                  False -> "e^i*pi*" ++ showPoly (poly sop)
           os = concatMap showPoly $ Map.elems $ outVals sop
-          showPoly p
-            | isMono p  = show p
-            | otherwise = "(" ++ show p ++ ")"
+          showPoly p = "(" ++ show p ++ ")"
 
 pathVar :: Int -> ID
 pathVar i = "p" ++ show i
@@ -166,18 +164,18 @@ tryRestrict sop bra = foldl' f sop $ Map.keys bra
                                   poly     = simplify . subst y psub $ poly sop,
                                   outVals  = Map.map (simplify . subst y psub) $ outVals sop }
 
-restrictGeneral :: (Eq a, Num a) => SOP a -> Map ID (Multilinear Bool) -> SOP a
-restrictGeneral sop bra = foldl' f sop $ Map.keys bra
+restrictGeneral :: (Eq a, Num a) => SOP a -> Map ID (Multilinear Bool) -> Maybe (SOP a)
+restrictGeneral sop bra = foldM f sop $ Map.keys bra
   where f sop x =
           let x' = (outVals sop)!x in
             if (simplify x') == (simplify $ bra!x)
-            then sop
+            then Just sop
             else
               case find ((`elem` (map pathVar $ pathVars sop)) . fst) $ solveForX (bra!x + x') of
-                Nothing        -> error $ "Can't reify " ++ (show $ bra!x + x') ++ " = 0"
-                Just (y, psub) -> sop { pathVars = pathVars sop \\ [read $ tail y],
-                                  poly     = simplify . subst y psub $ poly sop,
-                                  outVals  = Map.map (simplify . subst y psub) $ outVals sop }
+                Nothing        -> Nothing
+                Just (y, psub) -> Just sop { pathVars = pathVars sop \\ [read $ tail y],
+                                             poly     = simplify . subst y psub $ poly sop,
+                                             outVals  = Map.map (simplify . subst y psub) $ outVals sop }
       
 instance (Eq a, Num a) => Semigroup (SOP a) where
   a <> b = compose a b
@@ -238,6 +236,9 @@ circuitSOPWithHints vars circuit = foldMap (toSOPWithHints vars) circuit
 
 circuitSOP :: [Primitive] -> SOP Z8
 circuitSOP circuit = foldMap toSOP circuit
+
+circuitSOPZero :: [ID] -> [Primitive] -> SOP Z8
+circuitSOPZero init circuit = blank init <> (foldMap toSOP circuit)
 
 {- Simulation -}
 
@@ -519,12 +520,16 @@ validate vars inputs c1 c2 =
   let sop     = circuitSOPWithHints vars (c1 ++ dagger c2)
       ket     = blank (vars \\ inputs)
       bra     = Map.mapWithKey (\v b -> if b then ofVar v else zero) $ inVals (ket <> sop)
-      reduced = reduce $ restrictGeneral (ket <> sop) bra
+      restr   = restrictGeneral (ket <> sop) bra
   in
-    case (axiomKill reduced, all (== (fromInteger 1)) . Map.elems $ amplitudes reduced) of
-      (Just _, _) -> Just reduced
-      (_, False)  -> Just reduced
-      (_, _)      -> Nothing
+    case restr of
+      Nothing   -> Just $ ket <> sop
+      Just sop' ->
+        let reduced = reduce sop' in
+          case (axiomKill reduced, all (== (fromInteger 1)) . Map.elems $ amplitudes reduced) of
+            (Just _, _) -> Just reduced
+            (_, False)  -> Just reduced
+            (_, _)      -> Nothing
 
 {- Tests -}
 
@@ -536,6 +541,10 @@ tof = [ H "z",
         Tinv "x",
         CNOT "y" "z", CNOT "z" "x", CNOT "x" "y",
         H "z" ]
+
+andGate = [ H "z", T "z", CNOT "x" "z", CNOT "y" "z", CNOT "z" "x",
+            CNOT "z" "y", Tinv "x", Tinv "y", T "z", CNOT "z" "y",
+            CNOT "z" "x", CNOT "y" "z", CNOT "x" "z", H "z"]
 
 cH = [ Sinv "y", H "y", Tinv "y", CNOT "x" "y", T "y", H "y", S "y"]
 
