@@ -19,6 +19,7 @@ import qualified Data.Map as Map
 
 import Control.Monad
 import System.Time
+import System.Random
 import Control.DeepSeq
 
 import Benchmarks
@@ -51,8 +52,11 @@ cnotminPass = optimizationPass minCNOT
 simplifyPass :: DotQCPass
 simplifyPass = Right . simplifyDotQC
 
-badPass :: DotQCPass
-badPass = optimizationPass (\_ _ gates -> drop 1 gates)
+badPass :: StdGen -> DotQCPass
+badPass = gen optimizationPass f
+  where f _ _ gates =
+          let (i, _) = randomR (0, length gates) gen in
+            (\(pref, suff) -> pref ++ tail suff) $ splitAt i gates
 
 equivalenceCheck :: DotQC -> DotQC -> Either String DotQC
 equivalenceCheck qc qc' =
@@ -124,7 +128,7 @@ parseArgs pass verify (x:xs) = case x of
   "-cnotmin"   -> parseArgs (pass >=> cnotminPass) verify xs
   "-tpar"      -> parseArgs (pass >=> tparPass) verify xs
   "-simplify"  -> parseArgs (pass >=> simplifyPass) verify xs
-  "-bad"       -> parseArgs (pass >=> badPass) verify xs
+  "-bad"       -> newStdGen >>= \g -> parseArgs (pass >=> badPass g) verify xs
   "-verify"    -> parseArgs pass True xs
   "VerBench"   -> runBenchmarks cnotminPass (Just equivalenceCheck) benchmarksMedium
   "VerAlg"     -> runVerSuite
