@@ -53,10 +53,12 @@ simplifyPass :: DotQCPass
 simplifyPass = Right . simplifyDotQC
 
 badPass :: StdGen -> DotQCPass
-badPass = gen optimizationPass f
+badPass gen = optimizationPass f
   where f _ _ gates =
-          let (i, _) = randomR (0, length gates) gen in
-            (\(pref, suff) -> pref ++ tail suff) $ splitAt i gates
+          let (i, _) = randomR (0, length gates - 1) gen in
+            case splitAt i gates of
+              ([], [])   -> []
+              (xs, y:ys) -> xs ++ ys
 
 equivalenceCheck :: DotQC -> DotQC -> Either String DotQC
 equivalenceCheck qc qc' =

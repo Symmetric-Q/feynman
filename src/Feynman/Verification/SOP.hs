@@ -319,7 +319,6 @@ foldPaths f g sop = case pathVars sop of
                          poly = simplify . subst (pathVar x) one $ poly sop,
                          outVals = Map.map (simplify . subst (pathVar x) one) $ outVals sop }
         in
-          trace ("  expanding at " ++ (pathVar x)) $
           g (foldPaths f g sop0) (foldPaths f g sop1)
 
 foldReduce :: (Eq a, Fin a) => (SOP a -> b) -> (b -> b -> b) -> SOP a -> b
@@ -333,7 +332,6 @@ foldReduce f g sop = case pathVars sop of
                          poly = simplify . subst (pathVar x) one $ poly sop,
                          outVals = Map.map (simplify . subst (pathVar x) one) $ outVals sop }
         in
-          trace ("  expanding at " ++ (pathVar x)) $
           g (foldReduce f g $ reduce sop0) (foldReduce f g $ reduce sop1)
 
 foldReduceFull :: (Eq a, Fin a) => (SOP a -> b) -> (b -> b -> b) -> SOP a -> b
@@ -345,7 +343,6 @@ foldReduceFull f g sop = case (pathVars sop, vars $ poly sop) of
             sop1 = sop { poly = simplify . subst x one $ poly sop,
                          outVals = Map.map (simplify . subst x one) $ outVals sop }
         in
-          trace ("  expanding basis value at " ++ x) $
           g (foldReduceFull f g $ reduce sop0) (foldReduceFull f g $ reduce sop1)
       (x:xs, _) ->
         let sop0 = sop { pathVars = xs,
@@ -355,7 +352,6 @@ foldReduceFull f g sop = case (pathVars sop, vars $ poly sop) of
                          poly = simplify . subst (pathVar x) one $ poly sop,
                          outVals = Map.map (simplify . subst (pathVar x) one) $ outVals sop }
         in
-          trace ("  expanding at " ++ (pathVar x)) $
           g (foldReduceFull f g $ reduce sop0) (foldReduceFull f g $ reduce sop1)
 
 expandPaths :: (Eq a, Num a) => SOP a -> [SOP a]

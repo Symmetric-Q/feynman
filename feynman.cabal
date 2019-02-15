@@ -57,7 +57,7 @@ library
 
 executable feyn
   main-is:             Main.hs
-  buildable:           False
+  buildable:           True
   ghc-options:         -O2
   default-extensions:  GADTs,
                        ExistentialQuantification,
@@ -72,5 +72,6 @@ executable feyn
                        QuickCheck >= 2.8.2, 
                        deepseq,
                        ansi-terminal,
-                       old-time
+                       old-time,
+                       random
   default-language:    Haskell2010
