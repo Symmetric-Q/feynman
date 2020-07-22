@@ -69,7 +69,7 @@ library
                        old-time,
                        parsec >= 3.0,
                        parsec3-numbers,
-                       vec >= 0.3
+                       vec
   default-language:    Haskell2010
   
 
